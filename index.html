@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        #products .div-container  {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 10px;
+            border: 1px solid black;
+            background-color: lightgray;
+            display: flex;
+            justify-content: space-evenly;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="text-center mb-5">Look mom, I have a mongo database</h1>
+    <div class="container text-center mb-5">
+        <form action="/addProducts" method="POST">
+            <input class="form-control" type="text" placeholder="Product name" name="name">
+            <input class="form-control" type="text" placeholder="Price" name="price">
+            <input class="form-control" type="text" placeholder="quantity" name="quantity"><br>
+            <button class="btn btn-success" type="submit">Add Product</button>
+        </form>
+    </div>
+    <div id="products" class="container text-center">
+
+    </div>
+    <div id="update" class="container text-center mb-2">
+
+    </div>
+    <script>
+        function loadProducts() {
+            fetch('/products')
+                .then(res => res.json())
+                .then(products => {
+                    const container = document.getElementById('products');
+                    container.innerHTML = '';
+                    products.forEach(pd => {
+                        const item = document.createElement('div');
+                        item.className = 'div-container';
+                        item.innerHTML = `
+                           <h2><strong>${pd.name}</strong>, Price: ${pd.price}, Quantity: ${pd.quantity}</h2>
+                                <button style="width: 20%" onclick="loadProduct('${pd._id}')" class="btn btn-primary">Update</button>
+                                <button style="width: 15%" onclick="deleteProduct(event, '${pd._id}')" class="btn btn-danger">Delete</button>                          
+                        `;
+                        container.appendChild(item);
+                    });
+                })
+        }
+        loadProducts();
+
+        function loadProduct(id) {
+            fetch(`/product/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('update');
+                    container.style.width = '50%';
+                    container.style.padding = '5px';
+                    container.innerHTML = `
+                    <h3>Update: ${data.name}</h3>
+                    <input class="form-control" type="text" value="${data.price}" id="price">
+                    <input class="form-control" type="text" value="${data.quantity}" id="quantity"><br/>
+                    <button onclick="updateProduct('${data._id}')" class="btn btn-primary">Update</button>
+                `;
+                })
+        }
+
+        function updateProduct(id) {
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+            const product = { id, price, quantity };
+            console.log(product);
+            fetch(`/update/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result) {
+                        loadProducts();
+                        document.getElementById('update').innerHTML = '';
+                    }
+                })
+
+        }
+
+        function deleteProduct(event, id) {
+            console.log(event.target);
+            fetch(`/delete/${id}`, {
+                method: 'DELETE'
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result) {
+                        event.target.parentNode.style.display = 'none';
+                    }
+                })
+        }
+
+    </script>
+</body>
+
+</html>
